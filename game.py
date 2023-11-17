@@ -1,4 +1,7 @@
+import os
+
 import pygame
+import pygetwindow as pygetwindow
 
 import engine
 
@@ -14,6 +17,10 @@ class SpaceShooter(engine.Game):
             self.settings.set("resolution", resolution)
             self.settings.set("fullscreen", False)
             self.settings.save()
+        else:
+            self.resolution = self.settings.get("resolution")
+            if self.settings.get("fullscreen"):
+                pygame.display.toggle_fullscreen()
         pygame.display.set_caption("Space Shooters")
 
     def update(self):
@@ -68,7 +75,10 @@ class CheckBox(engine.GameObject):
         self.color = color
         self.hover_color = hover_color
         self.click_color = click_color
-        self.rect = Rectangle(self.center - self.size / 2, self.size)
+        checkbox_size = min(self.size.x, self.size.y)
+        text_size = self.font.size(self.text)
+        self.rect = Rectangle(self.center - Vector2(checkbox_size + text_size[0], checkbox_size) / 2,
+                                  Vector2(checkbox_size, checkbox_size))
         self.hover = False
         self.click = False
         self.checked = False  # New property for checkbox
@@ -78,19 +88,19 @@ class CheckBox(engine.GameObject):
         super().update()
         if self.click and not self.game.mouse.is_down(1):
             if self.on_click is not None:
-                self.on_click()
                 self.checked = not self.checked
+                self.on_click()
         self.hover = self.rect.contains_point(self.game.mouse.get_mouse_position())
         self.click = self.hover and self.game.mouse.is_down(1)
 
     def draw(self):
         super().draw()
         checkbox_size = min(self.size.x, self.size.y)
-        checkbox_rect = Rectangle(self.center - Vector2(checkbox_size, checkbox_size) / 2,
-                                  Vector2(checkbox_size, checkbox_size))
         text_size = self.font.size(self.text)
-        container_rect = Rectangle(self.center - Vector2((text_size[0] + checkbox_size) / 2 - 20, text_size[1] + 10) / 2,
-                                   Vector2((checkbox_size + text_size[0] + 40), text_size[1] + 10))
+        checkbox_rect = Rectangle(self.center - Vector2(checkbox_size + text_size[0], checkbox_size) / 2,
+                                  Vector2(checkbox_size, checkbox_size))
+        container_rect = Rectangle(self.center - Vector2(text_size[0] + checkbox_size + 40, text_size[1] + 10) / 2,
+                                   Vector2((text_size[0] + 120), text_size[1] + 10))
 
         self.game.renderer.draw_rect(container_rect, self.color)
 
@@ -108,9 +118,8 @@ class CheckBox(engine.GameObject):
         self.game.renderer.draw_rect_border(checkbox_rect, (0, 0, 0), 2)
 
         # Draw text
-        text_position = Vector2(self.center.x + checkbox_size / 2 + 10, self.center.y - self.font.get_height() / 2)
-        self.game.renderer.draw_text(self.text, text_position, (255, 255, 255), self.font)
-
+        text_position = Vector2(self.center.x + checkbox_size, self.center.y)
+        self.game.renderer.draw_text_centered(self.text, text_position, (255, 255, 255), self.font)
 
 
 class MenuState(engine.GameState):
@@ -123,13 +132,9 @@ class MenuState(engine.GameState):
         play = Button(self, Vector2(self.game.resolution[0] / 2, 310), Vector2(400, 100), "Play", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
         #play.on_click = lambda: self.game.set_state(GameState(self.game))
         settings = Button(self, Vector2(self.game.resolution[0] / 2, 420), Vector2(400, 100), "Settings", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
-        #settings.on_click = lambda: self.game.set_state(SettingsState(self.game))
+        settings.on_click = lambda: self.game.set_state(SettingsState(self.game))
         quit = Button(self, Vector2(self.game.resolution[0] / 2, 530), Vector2(400, 100), "Quit", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
         quit.on_click = lambda: self.game.quit()
-
-        #checkbox test
-        checkbox = CheckBox(self, Vector2(self.game.resolution[0] / 2, 200), Vector2(50, 50), "Test", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
-        checkbox.on_click = lambda: print("Checkbox clicked")
 
     def update(self):
         super().update()
@@ -141,6 +146,36 @@ class MenuState(engine.GameState):
         self.renderer.draw_rect(Rectangle(center - Vector2(300, 50), Vector2(600, 100)), (133, 133, 133))
         font = pygame.font.SysFont("monospace", 60)
         self.renderer.draw_text_centered("Space Shooters", center, (255, 255, 255), font)
+
+
+# will have a back button and fullscreen checkbox (for now)
+class SettingsState(engine.GameState):
+    def __init__(self, game: engine.Game):
+        super().__init__(game)
+
+    def initialize(self):
+        super().initialize()
+        font = pygame.font.SysFont("monospace", 60)
+        back = Button(self, Vector2(self.game.resolution[0] / 2, 530), Vector2(400, 100), "Back", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
+        back.on_click = lambda: self.game.set_state(MenuState(self.game))
+        checkbox = CheckBox(self, Vector2(self.game.resolution[0] / 2, 200), Vector2(50, 50), "Fullscreen", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
+        checkbox.checked = self.game.settings.get("fullscreen")
+        checkbox.on_click = lambda: {
+            self.game.settings.set("fullscreen", checkbox.checked),
+            pygame.display.toggle_fullscreen()
+        }
+
+
+    def update(self):
+        super().update()
+
+    def draw(self):
+        self.renderer.fill((100, 100, 100))
+        super().draw()
+        center = Vector2(self.game.resolution[0] / 2, 100)
+        self.renderer.draw_rect(Rectangle(center - Vector2(300, 50), Vector2(600, 100)), (133, 133, 133))
+        font = pygame.font.SysFont("monospace", 60)
+        self.renderer.draw_text_centered("Settings", center, (255, 255, 255), font)
 
 
 game = SpaceShooter((800, 600))

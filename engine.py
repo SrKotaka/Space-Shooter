@@ -213,7 +213,10 @@ class SettingsHandler:
         except Exception as e:
             self.game.handle_error(e)
 
-    def get(self, key: str, default):
+    def get(self, key):
+        return self.settings.get(key, None)
+
+    def get_default(self, key: str, default):
         return self.settings.get(key, default)
 
     def set(self, key: str, value):
