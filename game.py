@@ -1,7 +1,7 @@
 import os
 
+import subprocess
 import pygame
-import pygetwindow as pygetwindow
 
 import engine
 
@@ -130,7 +130,7 @@ class MenuState(engine.GameState):
         super().initialize()
         font = pygame.font.SysFont("monospace", 60)
         play = Button(self, Vector2(self.game.resolution[0] / 2, 310), Vector2(400, 100), "Play", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
-        #play.on_click = lambda: self.game.set_state(GameState(self.game))
+        play.on_click = lambda: self.game.set_state(GameState(self.game))
         settings = Button(self, Vector2(self.game.resolution[0] / 2, 420), Vector2(400, 100), "Settings", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
         settings.on_click = lambda: self.game.set_state(SettingsState(self.game))
         quit = Button(self, Vector2(self.game.resolution[0] / 2, 530), Vector2(400, 100), "Quit", font, (133, 133, 133), (200, 200, 200), (230, 230, 230))
@@ -146,7 +146,6 @@ class MenuState(engine.GameState):
         self.renderer.draw_rect(Rectangle(center - Vector2(300, 50), Vector2(600, 100)), (133, 133, 133))
         font = pygame.font.SysFont("monospace", 60)
         self.renderer.draw_text_centered("Space Shooters", center, (255, 255, 255), font)
-
 
 # will have a back button and fullscreen checkbox (for now)
 class SettingsState(engine.GameState):
