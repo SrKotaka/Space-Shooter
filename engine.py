@@ -125,7 +125,6 @@ class Game:
             self.update()
             self.draw()
             pygame.display.update()
-            self.keyboard.reset()
             self.fps_clock.tick(self.fps)
 
     def handle_error(self, error: Exception):
@@ -296,6 +295,9 @@ class Vector2:
         return Vector2(self.x * math.cos(angle) - self.y * math.sin(angle),
                        self.x * math.sin(angle) + self.y * math.cos(angle))
 
+    def to_rotation(self):
+        return math.atan2(self.y, self.x)
+
 
 class Rectangle:
     def __init__(self, pos: Vector2, size: Vector2):
@@ -373,6 +375,9 @@ class Rectangle:
 
     def set_y(self, y):
         self.pos.y = y
+
+    def intersects(self, other):
+        return self.pos.x < other.pos.x + other.size.x and self.pos.x + self.size.x > other.pos.x and self.pos.y < other.pos.y + other.size.y and self.pos.y + self.size.y > other.pos.y
 
 
 class Circle:
